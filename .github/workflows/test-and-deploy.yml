@@ -61,16 +61,16 @@ jobs:
         run: |
           ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
             cd ipfs-loadbalancer;
-            cp ~/serverinfo.json ./serverinfo.json
+            cp ~/serverinfo.html ./serverinfo.html
             sudo docker build . -t ipfs-loadbalancer;
-            rm serverinfo.json
+            rm serverinfo.html
             sudo docker stop ipfs-loadbalancer;
             sudo docker rm ipfs-loadbalancer
             sudo docker run -d -p 5001:5001 -p 9094:9094 --name ipfs-loadbalancer ipfs-loadbalancer;
           "
       - name: test connectivity
         run: |
-          curl -X GET http://${{secrets.HOST}}:5001/test
+          curl -X GET http://${{secrets.HOST}}:5001/test/index.html
       - name: delete ssh credentials
         run: |
           rm -rf ~/.ssh/id_rsa
