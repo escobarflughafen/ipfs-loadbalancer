@@ -67,7 +67,7 @@ jobs:
           "
       - name: test connectivity
         run: |
-          curl http://${{secrets.HOST}}:5001/test
+          curl -X GET http://${{secrets.HOST}}:5001/test
       - name: delete ssh credentials
         run: |
           rm -rf ~/.ssh/id_rsa
