@@ -39,7 +39,7 @@ jobs:
           ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
             git clone https://github.com/escobarflughafen/ipfs-loadbalancer.git;
             cd ipfs-loadbalancer;
-            nginx -t /home/ubuntu/ipfs-loadbalancer/ipfs.conf;
+            sudo nginx -t -c /home/${{ secrets.USER }}/ipfs-loadbalancer/ipfs.conf;
           "
       - name: delete ssh credentials
         run: |
