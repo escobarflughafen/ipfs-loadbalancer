@@ -40,7 +40,6 @@ jobs:
             cd ipfs-loadbalancer;
             git pull;
             sudo nginx -t -c /home/${{ secrets.USER }}/ipfs-loadbalancer/ipfs.conf;
-            rm ipfs.conf;
           "
       - name: delete ssh credentials
         run: |
