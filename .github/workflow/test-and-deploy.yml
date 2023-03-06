@@ -1,0 +1,72 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: setup ssh keys
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.PRIV_KEY }}" >> ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan "${{ secrets.HOST }}" 
+
+      # Runs a set of commands using the runners shell
+      - name: test the nginx script 
+        run: |
+          ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
+            git clone git://github.com/escobarflughafen/ipfs-loadbalancer;
+            cd ipfs-loadbalancer;
+            nginx -t /home/ubuntu/ipfs-loadbalancer/ipfs.conf;
+          "
+      - name: delete ssh credentials
+        run: |
+          rm -rf ~/.ssh/id_rsa
+          
+    
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup ssh keys
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.PRIV_KEY }}" >> ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan "${{ secrets.HOST }}"
+      - name: docker build
+        run: |
+          ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
+            sudo docker build . -t ipfs-loadbalancer;
+            sudo docker stop ipfs-loadbalancer;
+            sudo docker run -d -p 5001:5001 -p 9094:9094 --name ipfs-loadbalancer ipfs-loadbalancer;
+          "
+      - name: test connectivity
+        run: |
+          curl http://${{secrets.HOST}}:5001/test
+      - name: delete ssh credentials
+        run: |
+          rm -rf ~/.ssh/id_rsa
