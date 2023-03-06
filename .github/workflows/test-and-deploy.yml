@@ -39,7 +39,10 @@ jobs:
           ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
             cd ipfs-loadbalancer;
             git pull;
+            envsubst < ipfs.conf.template > ipfs.conf;
+            cat ipfs.conf;
             sudo nginx -t -c /home/${{ secrets.USER }}/ipfs-loadbalancer/ipfs.conf;
+            rm ipfs.conf;
           "
       - name: delete ssh credentials
         run: |
