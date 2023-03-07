@@ -34,9 +34,16 @@ jobs:
           ssh-keyscan "${{ secrets.HOST }}"  >> ~/.ssh/known_hosts
 
       # Runs a set of commands using the runners shell
-      - name: test the nginx script 
+      - name: test the nginx script on host 1 
         run: |
-          ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
+          ssh ${{ secrets.USER }}@${{ secrets.HOST1 }} "
+            cd ipfs-loadbalancer;
+            git pull;
+            sudo nginx -t -c /home/${{ secrets.USER }}/ipfs-loadbalancer/ipfs.conf;
+          "
+      - name: test the nginx script on host 2
+        run: |
+          ssh ${{ secrets.USER }}@${{ secrets.HOST2 }} "
             cd ipfs-loadbalancer;
             git pull;
             sudo nginx -t -c /home/${{ secrets.USER }}/ipfs-loadbalancer/ipfs.conf;
@@ -57,9 +64,20 @@ jobs:
           echo "${{ secrets.PRIV_KEY }}" >> ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan "${{ secrets.HOST }}"  >> ~/.ssh/known_hosts
-      - name: docker build
+      - name: docker build on host 1
         run: |
-          ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
+          ssh ${{ secrets.USER }}@${{ secrets.HOST1 }} "
+            cd ipfs-loadbalancer;
+            cp ~/serverinfo.html ./serverinfo.html
+            sudo docker build . -t ipfs-loadbalancer;
+            rm serverinfo.html
+            sudo docker stop ipfs-loadbalancer;
+            sudo docker rm ipfs-loadbalancer
+            sudo docker run -d -p 5001:5001 -p 9094:9094 --name ipfs-loadbalancer ipfs-loadbalancer;
+          "
+      - name: docker build on host 2
+        run: |
+          ssh ${{ secrets.USER }}@${{ secrets.HOST2 }} "
             cd ipfs-loadbalancer;
             cp ~/serverinfo.html ./serverinfo.html
             sudo docker build . -t ipfs-loadbalancer;
@@ -70,7 +88,8 @@ jobs:
           "
       - name: test connectivity
         run: |
-          curl -X GET http://${{secrets.HOST}}:5001/test/index.html
+          curl -X GET http://${{secrets.HOST1}}:5001/test/index.html
+          curl -X GET http://${{secrets.HOST2}}:5001/test/index.html
       - name: delete ssh credentials
         run: |
           rm -rf ~/.ssh/id_rsa
